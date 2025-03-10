@@ -1,0 +1,10 @@
+triggers:
+  Death:
+    max_backup: 1
+    enabled: true
+  Join:
+    max_backup: 1
+    enabled: true
+  Quit:
+    max_backup: 1
+    enabled: true
