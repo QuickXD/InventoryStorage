@@ -1,0 +1,4 @@
+name: InventoryBackup
+version: '${project.version}'
+main: it.quick.inventorybackup.InventoryBackup
+api-version: '1.13'
