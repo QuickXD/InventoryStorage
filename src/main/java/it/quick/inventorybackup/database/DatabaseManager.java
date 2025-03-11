@@ -137,9 +137,7 @@ public class DatabaseManager {
     }
 
     public void logPlayerQuit(Player player, long quitTime) {
-        if (!configManager.isTriggerEnabled("Quit")) {
-            return;
-        }
+        if (!configManager.isTriggerEnabled("Quit")) return;
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), quitTime);
@@ -158,6 +156,7 @@ public class DatabaseManager {
         });
     }
 
+
     public void logPlayerJoin(Player player, long joinTime) {
         saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), joinTime);
 
@@ -175,21 +174,26 @@ public class DatabaseManager {
     }
 
     public void logPlayerDeath(Player player, String cause, long deathTime) {
-        saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), deathTime);
+        if (!configManager.isTriggerEnabled("Death")) return;
 
-        String query = "INSERT INTO death_logs (uuid, username, death_time, cause) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, player.getUniqueId().toString());
-            stmt.setString(2, player.getName());
-            stmt.setLong(3, deathTime);
-            stmt.setString(4, cause);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), deathTime);
 
-        enforceBackupLimit(player, "death_logs", configManager.getMaxBackup("Death"));
+            String query = "INSERT INTO death_logs (uuid, username, death_time, cause) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, player.getUniqueId().toString());
+                stmt.setString(2, player.getName());
+                stmt.setLong(3, deathTime);
+                stmt.setString(4, cause);
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            enforceBackupLimit(player, "death_logs", configManager.getMaxBackup("Death"));
+        });
     }
+
 
     public List<Backup> getBackupsForJoin(Player player, int maxBackup) {
         List<Backup> backups = new ArrayList<>();
