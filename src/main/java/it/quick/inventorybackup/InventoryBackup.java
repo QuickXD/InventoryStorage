@@ -15,26 +15,26 @@ public class InventoryBackup extends JavaPlugin {
 
     private DatabaseManager databaseManager;
     private ConfigManager configManager;
+    private LoadInvCommand loadInvCommand;
 
     @Override
     public void onEnable() {
-
         this.configManager = new ConfigManager(this);
-
         databaseManager = new DatabaseManager(configManager);
 
+        loadInvCommand = new LoadInvCommand(this);
+
         PluginManager pluginManager = Bukkit.getPluginManager();
-        pluginManager.registerEvents(new GUIListener(this), this);
+        pluginManager.registerEvents(new GUIListener(this, loadInvCommand), this);
         pluginManager.registerEvents(new JoinListener(this), this);
         pluginManager.registerEvents(new DeathListener(this), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
 
-        this.getCommand("inventorybackupper").setExecutor(new LoadInvCommand(this));
+        this.getCommand("inventorybackupper").setExecutor(loadInvCommand);
     }
 
     @Override
     public void onDisable() {
-
         databaseManager.close();
     }
 

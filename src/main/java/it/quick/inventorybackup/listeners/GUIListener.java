@@ -17,13 +17,16 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class GUIListener implements Listener {
 
     private final InventoryBackup plugin;
+    private final LoadInvCommand loadInvCommand;
 
-    public GUIListener(InventoryBackup plugin) {
+    public GUIListener(InventoryBackup plugin, LoadInvCommand loadInvCommand) {
         this.plugin = plugin;
+        this.loadInvCommand = loadInvCommand;
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
         String title = event.getView().getTitle();
 
@@ -33,13 +36,10 @@ public class GUIListener implements Listener {
             return;
         }
 
-        if (title.equals(ChatColor.GOLD + "Backup Inventari") || title.equals("Backup Inventory")) {
-            if (!player.hasPermission("inventorybackupper.interact")) {
-                event.setCancelled(true);
-            }
+        if (title.equals(ChatColor.GOLD + "Backup Inventari")) {
+            event.setCancelled(true);
 
-
-        if (event.getCurrentItem() != null) {
+            if (event.getCurrentItem() != null) {
                 ItemMeta meta = event.getCurrentItem().getItemMeta();
                 if (meta != null) {
                     if (event.getCurrentItem().getType() == Material.GREEN_WOOL && meta.getDisplayName().equals(ChatColor.GREEN + "Join")) {
@@ -54,8 +54,6 @@ public class GUIListener implements Listener {
         }
 
         if (title.contains("Backup Quit") || title.contains("Backup Join") || title.contains("Backup Morti")) {
-            event.setCancelled(true);
-
             if (event.getCurrentItem() != null) {
                 ItemMeta meta = event.getCurrentItem().getItemMeta();
                 if (meta != null && meta.getLore() != null && !meta.getLore().isEmpty()) {
@@ -74,14 +72,12 @@ public class GUIListener implements Listener {
                         }
                     }
                 }
-            } else if (event.getCurrentItem() != null && event.getCurrentItem().getType() == Material.ARROW) {
-
-                player.closeInventory();
-                new LoadInvCommand(plugin).openMainInventory(player);
+            }
+            if (!player.hasPermission("inventorybackupper.interact")) {
+                event.setCancelled(true);
             }
         }
     }
-
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {

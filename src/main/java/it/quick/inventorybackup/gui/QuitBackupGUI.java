@@ -42,6 +42,7 @@ public class QuitBackupGUI {
             inventory.setItem(slot++, backupItem);
         }
 
+        player.openInventory(inventory);
     }
 
     public void openFullBackup(Player player, Backup backup) {

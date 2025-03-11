@@ -42,10 +42,11 @@ public class DeathBackupGUI {
             inventory.setItem(slot++, backupItem);
         }
 
+        player.openInventory(inventory);
     }
 
     public void openFullBackup(Player player, Backup backup) {
-        Inventory inventory = Bukkit.createInventory(null, 54, "Backup Inventory");
+        Inventory inventory = Bukkit.createInventory(null, 54, ChatColor.RED + "Backup Morti - " + backup.getDateFormatted());
 
         ItemStack[] backupInventory = plugin.getDatabaseManager().getInventory(player, backup.getTimestamp());
         ItemStack[] backupArmor = plugin.getDatabaseManager().getArmor(player, backup.getTimestamp());

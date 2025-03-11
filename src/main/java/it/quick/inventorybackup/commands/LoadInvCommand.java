@@ -57,6 +57,12 @@ public class LoadInvCommand implements CommandExecutor {
             return false;
         }
 
+        openMainInventory(player, targetPlayer);
+
+        return true;
+    }
+
+    public void openMainInventory(Player player, Player targetPlayer) {
         Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GOLD + "Backup Inventari");
 
         ItemStack feather = new ItemStack(Material.FEATHER);
@@ -90,30 +96,6 @@ public class LoadInvCommand implements CommandExecutor {
             quitMeta.setDisplayName(ChatColor.WHITE + "Quit");
             quitButton.setItemMeta(quitMeta);
         }
-        gui.setItem(4, quitButton);
-
-        return true;
-    }
-
-    public void openMainInventory(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GOLD + "Backup Inventari");
-
-        ItemStack joinButton = new ItemStack(Material.GREEN_WOOL);
-        ItemMeta joinMeta = joinButton.getItemMeta();
-        joinMeta.setDisplayName(ChatColor.GREEN + "Join");
-        joinButton.setItemMeta(joinMeta);
-        gui.setItem(3, joinButton);
-
-        ItemStack deathButton = new ItemStack(Material.RED_WOOL);
-        ItemMeta deathMeta = deathButton.getItemMeta();
-        deathMeta.setDisplayName(ChatColor.RED + "Deaths");
-        deathButton.setItemMeta(deathMeta);
-        gui.setItem(5, deathButton);
-
-        ItemStack quitButton = new ItemStack(Material.WHITE_WOOL);
-        ItemMeta quitMeta = quitButton.getItemMeta();
-        quitMeta.setDisplayName(ChatColor.WHITE + "Quit");
-        quitButton.setItemMeta(quitMeta);
         gui.setItem(4, quitButton);
 
         player.openInventory(gui);
