@@ -1,6 +1,6 @@
 package it.quick.inventorybackup;
 
-import it.quick.inventorybackup.commands.LoadInvCommand;
+import it.quick.inventorybackup.commands.InventoryBackupCommand;
 import it.quick.inventorybackup.database.DatabaseManager;
 import it.quick.inventorybackup.config.ConfigManager;
 import it.quick.inventorybackup.listeners.GUIListener;
@@ -15,27 +15,26 @@ public class InventoryBackup extends JavaPlugin {
 
     private DatabaseManager databaseManager;
     private ConfigManager configManager;
-    private LoadInvCommand loadInvCommand;
 
     @Override
     public void onEnable() {
         this.configManager = new ConfigManager(this);
-        databaseManager = new DatabaseManager(configManager);
+        databaseManager = new DatabaseManager(this, configManager);
 
-        loadInvCommand = new LoadInvCommand(this);
+        this.getCommand("inventorybackupper").setExecutor(new InventoryBackupCommand(this, databaseManager));
 
         PluginManager pluginManager = Bukkit.getPluginManager();
-        pluginManager.registerEvents(new GUIListener(this, loadInvCommand), this);
+        pluginManager.registerEvents(new GUIListener(this, new InventoryBackupCommand(this, databaseManager)), this);
         pluginManager.registerEvents(new JoinListener(this), this);
         pluginManager.registerEvents(new DeathListener(this), this);
-        getServer().getPluginManager().registerEvents(new QuitListener(this), this);
-
-        this.getCommand("inventorybackupper").setExecutor(loadInvCommand);
+        pluginManager.registerEvents(new QuitListener(this), this);
     }
 
     @Override
     public void onDisable() {
-        databaseManager.close();
+        if (databaseManager != null) {
+            databaseManager.close();
+        }
     }
 
     public DatabaseManager getDatabaseManager() {

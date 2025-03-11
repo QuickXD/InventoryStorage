@@ -1,5 +1,6 @@
 package it.quick.inventorybackup.listeners;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,17 +24,18 @@ public class JoinListener implements Listener {
         Player player = event.getPlayer();
         long joinTime = System.currentTimeMillis();
 
-        databaseManager.logPlayerJoin(player, joinTime);
-
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            databaseManager.logPlayerJoin(player, joinTime);
 
             ItemStack[] inventory = databaseManager.getInventory(player, joinTime);
             ItemStack[] armor = databaseManager.getArmor(player, joinTime);
 
-            if (inventory.length > 0 || armor.length > 0) {
-                player.getInventory().setContents(inventory);
-                player.getInventory().setArmorContents(armor);
-            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (inventory.length > 0 || armor.length > 0) {
+                    player.getInventory().setContents(inventory);
+                    player.getInventory().setArmorContents(armor);
+                }
+            });
         });
     }
 }

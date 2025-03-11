@@ -5,15 +5,13 @@ api-version: 1.13
 commands:
   inventorybackupper:
     description: "Gestisci gli inventari di backup"
-    subcommands:
-      loadinv:
-        description: "Carica l'inventario di backup di un giocatore"
-        permission: inventorybackupper.loadinv
-        permission-message: "Non hai i permessi per eseguire questo comando."
 permissions:
-      inventorybackupper.interact:
-        description: "Permette ai giocatori di interagire con le GUI dei backup e prelevare oggetti."
-        default: false
-      inventorybackupper.use:
-        description: "Permette ai giocatori di usare il comando inventorybackupper."
-        default: false
+  inventorybackupper.interact:
+    description: "Permette ai giocatori di interagire con le GUI dei backup e prelevare oggetti."
+    default: false
+  inventorybackupper.use:
+    description: "Permette ai giocatori di usare il comando inventorybackupper loadinv."
+    default: false
+  inventorybackupper.info:
+      description: "Permette ai giocatori di usare il comando inventorybackupper info."
+      default: true

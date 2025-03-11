@@ -1,8 +1,10 @@
 package it.quick.inventorybackup.database;
 
 import it.quick.inventorybackup.config.ConfigManager;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 import java.sql.*;
@@ -10,13 +12,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.util.io.BukkitObjectInputStream;
+
+
 public class DatabaseManager {
 
     private Connection connection;
     private final ConfigManager configManager;
+    private final JavaPlugin plugin;
 
-    public DatabaseManager(ConfigManager configManager) {
+    public DatabaseManager(JavaPlugin plugin, ConfigManager configManager) {
+        this.plugin = plugin;
         this.configManager = configManager;
+
         try {
             File dataFolder = new File("plugins/InventoryBackup");
             if (!dataFolder.exists()) {
@@ -132,57 +140,68 @@ public class DatabaseManager {
     }
 
     public void logPlayerQuit(Player player, long quitTime) {
-        if (!configManager.isTriggerEnabled("Quit")) {
-            return;
-        }
+        if (!configManager.isTriggerEnabled("Quit")) return;
 
-        saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), quitTime);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), quitTime);
 
-        String query = "INSERT INTO quit_logs (uuid, username, quit_time) VALUES (?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, player.getUniqueId().toString());
-            stmt.setString(2, player.getName());
-            stmt.setLong(3, quitTime);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            String query = "INSERT INTO quit_logs (uuid, username, quit_time) VALUES (?, ?, ?)";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, player.getUniqueId().toString());
+                stmt.setString(2, player.getName());
+                stmt.setLong(3, quitTime);
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
 
-        enforceBackupLimit(player, "quit_logs", configManager.getMaxBackup("Quit"));
+            enforceBackupLimit(player, "quit_logs", configManager.getMaxBackup("Quit"));
+        });
     }
+
 
     public void logPlayerJoin(Player player, long joinTime) {
-        saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), joinTime);
+        if (!configManager.isTriggerEnabled("Join")) return;
 
-        String query = "INSERT INTO join_logs (uuid, username, join_time) VALUES (?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, player.getUniqueId().toString());
-            stmt.setString(2, player.getName());
-            stmt.setLong(3, joinTime);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), joinTime);
 
-        enforceBackupLimit(player, "join_logs", configManager.getMaxBackup("Join"));
+            String query = "INSERT INTO join_logs (uuid, username, join_time) VALUES (?, ?, ?)";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, player.getUniqueId().toString());
+                stmt.setString(2, player.getName());
+                stmt.setLong(3, joinTime);
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            enforceBackupLimit(player, "join_logs", configManager.getMaxBackup("Join"));
+        });
     }
+
 
     public void logPlayerDeath(Player player, String cause, long deathTime) {
-        saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), deathTime);
+        if (!configManager.isTriggerEnabled("Death")) return;
 
-        String query = "INSERT INTO death_logs (uuid, username, death_time, cause) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, player.getUniqueId().toString());
-            stmt.setString(2, player.getName());
-            stmt.setLong(3, deathTime);
-            stmt.setString(4, cause);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            saveInventory(player, player.getInventory().getContents(), player.getInventory().getArmorContents(), deathTime);
 
-        enforceBackupLimit(player, "death_logs", configManager.getMaxBackup("Death"));
+            String query = "INSERT INTO death_logs (uuid, username, death_time, cause) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, player.getUniqueId().toString());
+                stmt.setString(2, player.getName());
+                stmt.setLong(3, deathTime);
+                stmt.setString(4, cause);
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            enforceBackupLimit(player, "death_logs", configManager.getMaxBackup("Death"));
+        });
     }
+
 
     public List<Backup> getBackupsForJoin(Player player, int maxBackup) {
         List<Backup> backups = new ArrayList<>();
@@ -285,17 +304,15 @@ public class DatabaseManager {
         return new ItemStack[0];
     }
 
-    private ItemStack[] deserializeInventory(byte[] data) {
-        if (data == null || data.length == 0) {
-            return new ItemStack[0];
-        }
 
+    public static ItemStack[] deserializeInventory(byte[] data) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
-             ObjectInputStream in = new ObjectInputStream(bis)) {
-            List<Map<String, Object>> serializedItems = (List<Map<String, Object>>) in.readObject();
-            ItemStack[] items = new ItemStack[serializedItems.size()];
-            for (int i = 0; i < serializedItems.size(); i++) {
-                items[i] = ItemStack.deserialize(serializedItems.get(i));
+             BukkitObjectInputStream in = new BukkitObjectInputStream(bis)) {
+
+            int size = in.readInt();
+            ItemStack[] items = new ItemStack[size];
+            for (int i = 0; i < size; i++) {
+                items[i] = (ItemStack) in.readObject();
             }
             return items;
         } catch (IOException | ClassNotFoundException e) {
@@ -303,6 +320,8 @@ public class DatabaseManager {
         }
         return new ItemStack[0];
     }
+
+
 
     public void close() {
         try {

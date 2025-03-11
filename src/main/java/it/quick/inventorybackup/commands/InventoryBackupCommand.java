@@ -2,31 +2,49 @@ package it.quick.inventorybackup.commands;
 
 import it.quick.inventorybackup.InventoryBackup;
 import it.quick.inventorybackup.database.DatabaseManager;
+import it.quick.inventorybackup.database.Backup;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Collections;
+import java.util.List;
 
-public class LoadInvCommand implements CommandExecutor {
+public class InventoryBackupCommand implements CommandExecutor {
 
     private final InventoryBackup plugin;
     private final DatabaseManager databaseManager;
 
-    public LoadInvCommand(InventoryBackup plugin) {
+    public InventoryBackupCommand(InventoryBackup plugin, DatabaseManager databaseManager) {
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.databaseManager = databaseManager;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length < 1) {
+            sender.sendMessage(ChatColor.RED + "Uso corretto: /inventorybackupper <loadinv|info> [<player>]");
+            return false;
+        }
+
+        if (args[0].equalsIgnoreCase("loadinv")) {
+            return handleLoadInvCommand(sender, args);
+        } else if (args[0].equalsIgnoreCase("info")) {
+            return handleInfoCommand(sender);
+        } else {
+            sender.sendMessage(ChatColor.RED + "Comando sconosciuto. Usa /inventorybackupper <loadinv|info> [<player>]");
+            return false;
+        }
+    }
+
+    private boolean handleLoadInvCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "Questo comando può essere eseguito solo da un giocatore!");
             return false;
@@ -40,12 +58,7 @@ public class LoadInvCommand implements CommandExecutor {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Uso corretto: /inventorybackupper loadinv <player>");
-            return false;
-        }
-
-        if (!args[0].equalsIgnoreCase("loadinv")) {
-            sender.sendMessage(ChatColor.RED + "Comando sconosciuto. Usa /inventorybackupper loadinv <player>");
+            player.sendMessage(ChatColor.RED + "Uso corretto: /inventorybackupper loadinv <player>");
             return false;
         }
 
@@ -53,11 +66,40 @@ public class LoadInvCommand implements CommandExecutor {
         Player targetPlayer = Bukkit.getPlayer(playerName);
 
         if (targetPlayer == null || !targetPlayer.isOnline()) {
-            sender.sendMessage(ChatColor.RED + "Il giocatore " + playerName + " non è online!");
+            player.sendMessage(ChatColor.RED + "Il giocatore " + playerName + " non è online!");
             return false;
         }
 
         openMainInventory(player, targetPlayer);
+        return true;
+    }
+
+    private boolean handleInfoCommand(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Questo comando può essere eseguito solo da un giocatore!");
+            return false;
+        }
+
+        Player player = (Player) sender;
+
+        if (!player.hasPermission("inventorybackupper.info")) {
+            player.sendMessage(ChatColor.RED + "Non hai il permesso di usare questo comando.");
+            return true;
+        }
+
+        List<Backup> joinBackups = databaseManager.getBackupsForJoin(player, Integer.MAX_VALUE);
+        List<Backup> deathBackups = databaseManager.getBackupsForDeath(player, Integer.MAX_VALUE);
+        List<Backup> quitBackups = databaseManager.getBackupsForQuit(player, Integer.MAX_VALUE);
+
+        int maxJoinBackups = plugin.getConfigManager().getMaxBackup("Join");
+        int maxDeathBackups = plugin.getConfigManager().getMaxBackup("Death");
+        int maxQuitBackups = plugin.getConfigManager().getMaxBackup("Quit");
+
+        int totalBackups = Math.min(joinBackups.size(), maxJoinBackups) +
+                Math.min(deathBackups.size(), maxDeathBackups) +
+                Math.min(quitBackups.size(), maxQuitBackups);
+
+        player.sendMessage(ChatColor.GOLD + "InventoryStorage -> Hai " + totalBackups + " backup disponibili!");
 
         return true;
     }

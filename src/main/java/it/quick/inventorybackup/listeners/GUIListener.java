@@ -1,7 +1,7 @@
 package it.quick.inventorybackup.listeners;
 
 import it.quick.inventorybackup.InventoryBackup;
-import it.quick.inventorybackup.commands.LoadInvCommand;
+import it.quick.inventorybackup.commands.InventoryBackupCommand;
 import it.quick.inventorybackup.database.Backup;
 import it.quick.inventorybackup.gui.DeathBackupGUI;
 import it.quick.inventorybackup.gui.JoinBackupGUI;
@@ -17,11 +17,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class GUIListener implements Listener {
 
     private final InventoryBackup plugin;
-    private final LoadInvCommand loadInvCommand;
+    private final InventoryBackupCommand inventoryBackupCommand;
 
-    public GUIListener(InventoryBackup plugin, LoadInvCommand loadInvCommand) {
+    public GUIListener(InventoryBackup plugin, InventoryBackupCommand inventoryBackupCommand) {
         this.plugin = plugin;
-        this.loadInvCommand = loadInvCommand;
+        this.inventoryBackupCommand = inventoryBackupCommand;
     }
 
     @EventHandler
